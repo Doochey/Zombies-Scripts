@@ -10,14 +10,23 @@ public class HealthPickup : MonoBehaviour
     private bool added;
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.tag.Equals("Player") && !added)
+        if (other.gameObject.tag.Equals("Player") && !added) // If player walks over health pack
         {
+            // If player health less than max
             if (other.gameObject.GetComponent<PlayerHealth>().getHealth() < 125)
             {
+                
+                // Increase health by health pack ampount
                 other.gameObject.GetComponent<PlayerHealth>().increaseHealth(HP);
                 added = true;
+                
+                // Subtract droppable from world counter
                 GameObject.FindWithTag("GM").GetComponent<GameMaster>().subtractDroppable();
+                
+                // Log health pack picked up
                 GameObject.FindWithTag("StatLog").GetComponent<StatLogging>().addHealthPacksPickedUp();
+                
+                // Destroy health pack
                 Destroy(gameObject);
             }
             

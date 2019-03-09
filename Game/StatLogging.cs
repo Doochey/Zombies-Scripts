@@ -4,35 +4,25 @@ using UnityEngine;
 
 public class StatLogging : MonoBehaviour
 {
-    private int zKilled = 0;
+    private int zKilled = 0; // Number of Zs player killed
 
-    private float timePlayed = 0f;
+    private float timePlayed = 0f; // Time game has been running
 
-    private string killedPlayer = "";
+    private string killedPlayer = ""; //  Which enemy killed the player
 
-    private int waveReached = 1;
-    private float healthLost = 0f;
-    private int healthPacksPickedUp = 0;
-    private int timesHit = 0;
-    private int timesPaused = 0;
-    private int timesRestarted = 0;
-    private int mouseClicks = 0;
-    private int AVPickedUp = 0;
-    private int timesPoisoned = 0;
-    private float averageWaveDR = 0f;
-    private bool dumped = false;
+    private int waveReached = 1; // The max wave player reached
+    private float healthLost = 0f; // Total health player lost
+    private int healthPacksPickedUp = 0; // Number of health packs picked up
+    private int timesHit = 0; // Number of times player hit
+    private int timesPaused = 0; // Number of times player paused the game
+    private int timesRestarted = 0; // Number of times the player restarted the game
+    private int mouseClicks = 0; // Number of times player clicked button on mouse
+    private int AVPickedUp = 0; // Number of Anti venom picked up
+    private int timesPoisoned = 0; // Number of times player was poisoned
+    private float averageWaveDR = 0f; // Average 'trueDR' of waves player faced
+    private bool dumped = false; // If stats have been printed to output
     
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+  
 
     private float getTimePlayed()
     {
@@ -94,6 +84,8 @@ public class StatLogging : MonoBehaviour
 
     public void StatDump()
     {
+        // Print the stats to output
+        // Currently debug file /users/appdata/locallow/companyname/productname/output.txt
         if (!dumped)
         {
             Debug.Log("Zombies Killed: " + zKilled);

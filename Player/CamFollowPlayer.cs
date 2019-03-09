@@ -2,10 +2,10 @@
 
 public class CamFollowPlayer : MonoBehaviour
 {
-    public Transform target;            
-    public float smoothing = 5f;        
+    public Transform target; // The transform for the camera to follow       
+    public float smoothing = 5f; // Smoothing factor
 
-    Vector3 offset;                     
+    Vector3 offset; // Offset between camera and player               
 
     void Start()
     {
@@ -18,6 +18,7 @@ public class CamFollowPlayer : MonoBehaviour
         {
             Vector3 targetCamPos = target.position + offset;
 
+            // Move camera to follow target
             transform.position = Vector3.Lerp (transform.position, targetCamPos, smoothing * Time.deltaTime);
         }
         

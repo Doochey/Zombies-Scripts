@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Zombpedia : MonoBehaviour
 {
+    // For displaying and hiding the 'Zombpedia' menu
 
     public GameObject zombpediaMenu;
 

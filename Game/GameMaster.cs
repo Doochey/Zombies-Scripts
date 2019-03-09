@@ -16,39 +16,52 @@ public class GameMaster : MonoBehaviour
      */
     
     public float skill; // Skill of player
-    public GameObject[] spawnPoints; // List of possible spawnpoints
-    public Stack<GameObject> waveComp; // Stack of Zs for upcoming wave
-    public GameObject[] enemyList; // List of possible enemy types
-    public int zLimit = 60; // Max number of Zs
     public float spawnRate = 2f; // Rate Zs spawn
-    public int maxDroppables; // Max number of items in the world at once
-    public int maxWaves; // Max number of waves player can play
+    public float minSpawnDistance; // Minimum distance spawner must be from player to spawn Z
+    
+    public GameObject[] spawnPoints; // List of possible spawnpoints
+    public GameObject[] enemyList; // List of possible enemy types
     
     public GameObject smallHealth; // Small Health Pack
     public GameObject mediumHealth; // Medium Health Pack
     public GameObject largeHealth; // Large Health pack
     public GameObject antiVenom; // Anti Venom
-    public GameObject healthSpawner; // Health Spawner ~At center of map
+    public GameObject healthSpawner; // Health spawner ~At center of map
+    public GameObject player; // The player
+    public GameObject gameOverMenu; // Menu for displaying at game over (defeat)
+    public GameObject winMenu; // Menu for displaying at game over (win)
 
-    public GameObject player;
-    public float minSpawnDistance;
+    public Stack<GameObject> waveComp; // Stack of Zs for upcoming wave
     
+    public int maxDroppables; // Max number of items in the world at once
+    public int maxWaves; // Max number of waves player can play
+    public int zLimitModifier; // Constant multiplied by wave to get max number of Zs
+    public int waveDRConstant; // Constant offset for DR of wave. Higher == More difficult
+    
+
     
     
     private float waveDR;  // Difficulty Rating of Wave
-    private bool gameOver = false; 
-    private int wave = 0;
-    private bool inWave = false;
     private float zLeft = 0f; // Zs Alive in current wave
+    
+    private bool gameOver = false; // If game is over or not
+    private bool inWave = false; // If in wave or not
+    private bool win = false; // If game has been won
+    
+    private int wave = 0; // Current wave number
     private int spawned = 0; // Zs successfully spawned, for Debugging
     private int toSpawn = 0; // Number of Zs that should spawn
+    private int zLimit = 60; // Max number of Zs
+    private int currentDroppables = 0; // Current number of items in the world. 
+    
     private string lastEnemyToAttack; // Last enemy to do damage to player
+    
     private Text waveNumber; // Text showing wave number
     private Text zombieNumber; // Text showing Zs left alive
-    private StatLogging logger;
-
-
-    private static int currentDroppables = 0; // Current number of items in the world
+    
+    private StatLogging logger; // Stat Logger
+    
+    
     
     
 
@@ -69,13 +82,20 @@ public class GameMaster : MonoBehaviour
         // If game is not over and wave not in progress
         if (!gameOver && !inWave && wave < 10)
         {
+            // Inc Wave number
             wave++;
             
+            // Adjust possible enemies, dependant on wave number
             ManageEnemyList();
             
             waveNumber.text = "WAVE: " + wave;
-            waveDR = 50 * wave + skill;
+            
+            // Calculate waveDR
+            waveDR = waveDRConstant * wave + skill;
+            
+            // Log current wave difficulty
             Debug.Log("Wave Difficulty: " + waveDR);
+            
             // Build composition of wave
             loadWaveComposition();
             
@@ -87,7 +107,7 @@ public class GameMaster : MonoBehaviour
             inWave = true;
             
             // Spawn Z every spawnRate seconds.
-            // Number of Zs spawning at once proportional to wave number
+            // Number of Zs spawning at once proportional to wave number. Higher wave == more Z spawn at once == More difficult
             for (int i = 0; i < wave; i++)
             {
                 StartCoroutine(spawnZ());
@@ -115,21 +135,54 @@ public class GameMaster : MonoBehaviour
             
             // Set next wave DR
             waveDR = 50 * wave;
-        }
 
-        // If max waves reached
-        if (wave >= maxWaves)
-        {
-            gameOver = true;
+            // If final wave
+            if (wave + 1 > maxWaves)
+            {
+                // Game Won
+                win = true;
+            }
             
         }
 
-        if (gameOver)
+        
+        if (win)
         {
+            // Game is over (Win), display win menu
+            // Should only rin when player not killed and won game
+            
+            gameOver = true;
+            
+            // Display win menu
+            winMenu.SetActive(true);
+            winMenu.GetComponent<Animator>().SetTrigger("GameOver");
+            
+            // Reset cursor to default
+            GetComponent<SetCursor>().ResetCursor();
+            
+        }
+        else if (gameOver)
+        {
+            // Game is over (Defeat), Display game over menu
+            // Should only run when player killed
+            
+            // Stop more Zs spawning
             StopAllCoroutines();
+            
+            // Log enemy that killed player
             logger.SetKilledPlayer(lastEnemyToAttack);
+            
+            // Log wave reached
             logger.addWaveReached(wave);
+            // Print log to output
             logger.StatDump();
+            
+            // Display game over menu
+            gameOverMenu.SetActive(true);
+            gameOverMenu.GetComponent<Animator>().SetTrigger("GameOver");
+            
+            // Reset cursor to default
+            GetComponent<SetCursor>().ResetCursor();
         }
         
         
@@ -141,6 +194,7 @@ public class GameMaster : MonoBehaviour
         return gameOver;
     }
 
+    // Sets game over to true, used by player when health == 0
     public void setGameOver()
     {
         gameOver = true;
@@ -152,13 +206,14 @@ public class GameMaster : MonoBehaviour
     */
     void loadWaveComposition()
     {
-        zLimit = 20 * wave;
+        // Calculate max Zs to spawn
+        zLimit = zLimitModifier * wave;
         bool waveCompDone = false;
-        int cycles = 0; // Possible that waveDR left is not enough for any Z to be added to wave
+        int cycles = 0; // Possible that waveDR left is not enough for any Z to be added to wave so limit looping
         while (!waveCompDone)
         {
             
-            // Select random enemy from possible
+            // Select random enemy from all possible
             int enemyIndex = Random.Range(0, enemyList.Length);
             
             // Calculate 'true' difficulty rating, DR of Z / Player skill
@@ -174,7 +229,7 @@ public class GameMaster : MonoBehaviour
                 waveDR -= trueDR;
             }
             
-            if (waveComp.Count == zLimit || cycles >= zLimit) // If max Zs reached or max Cycles
+            if (waveComp.Count == zLimit || cycles >= zLimit*2) // If max Zs reached or max Cycles
             {
                 waveCompDone = true;
                 Debug.Log("Wave Comp Loaded");
@@ -186,6 +241,7 @@ public class GameMaster : MonoBehaviour
             }
         }
 
+        // Update number of Zs alive
         zLeft = waveComp.Count;
     }
 
@@ -202,6 +258,7 @@ public class GameMaster : MonoBehaviour
             int spawnPointIndex = Random.Range(0, spawnPoints.Length);
             GameObject spawnPoint = spawnPoints[spawnPointIndex];
 
+            // If player is within minimum distance or not
             bool playerTooClose = Vector3.Distance(spawnPoint.transform.position, player.transform.position) < minSpawnDistance;
 
             // If spawn point is clear spawn Z
@@ -224,12 +281,14 @@ public class GameMaster : MonoBehaviour
     // When Z health reaches 0, Z has chance of dropping item
     public void drop(GameObject Z)
     {
-        // Random chance of dropping item
+        // If world droppables not at max capacity
         bool dropOK = currentDroppables < maxDroppables;
+        
         if (dropOK)
         {
             // Each Z only gets one dice roll
             int attempt = Random.Range(0, 4);
+            
             switch (attempt)
             {
                 case 0:
@@ -237,6 +296,8 @@ public class GameMaster : MonoBehaviour
                     {
                         currentDroppables++;
                         GameObject droppable = Instantiate(smallHealth, Z.transform.position, Z.transform.rotation);
+                        
+                        // Despawn droppable if not picked up after 30 seconds
                         Destroy(droppable, 30f);
                     }
                     break;
@@ -245,6 +306,8 @@ public class GameMaster : MonoBehaviour
                     {
                         currentDroppables++;
                         GameObject droppable = Instantiate(mediumHealth, Z.transform.position, Z.transform.rotation);
+                        
+                        // Despawn droppable if not picked up after 30 seconds
                         Destroy(droppable, 30f);
                     }
                     break;
@@ -253,6 +316,8 @@ public class GameMaster : MonoBehaviour
                     {
                         currentDroppables++;
                         GameObject droppable = Instantiate(largeHealth, Z.transform.position, Z.transform.rotation);
+                        
+                        // Despawn droppable if not picked up after 30 seconds
                         Destroy(droppable, 30f);
                     }
                     break;
@@ -261,6 +326,8 @@ public class GameMaster : MonoBehaviour
                     {
                         currentDroppables++;
                         GameObject droppable = Instantiate(antiVenom, Z.transform.position, Z.transform.rotation);
+                        
+                        // Despawn droppable if not picked up after 30 seconds
                         Destroy(droppable, 30f);
                     } 
                     break;
@@ -270,8 +337,10 @@ public class GameMaster : MonoBehaviour
     }
 
     // Spawns health at health spawner. Size of health pack depends on wave number
+    // Only spawns health on odd waves, (currently) so player gets health before wave 10 (final wave)
     private void SpawnHealth()
     {
+        // If world droppables not at max capacity && odd wave
         if (currentDroppables < maxDroppables && wave % 2 > 0)
         {
             if (wave < 4)
@@ -297,13 +366,14 @@ public class GameMaster : MonoBehaviour
     public void zDead()
     {
         zLeft-=1;
+        
+        // Log Z killed action
         logger.addZKilled();
     }
 
     // Record the last enemy to do damage to the player
     public void recordLastEnemyToAttack(string tag)
     {
-        Debug.Log(tag);
         lastEnemyToAttack = tag;
     }
 
@@ -319,12 +389,14 @@ public class GameMaster : MonoBehaviour
         currentDroppables--;
     }
 
+    // Changes the possible enemy list depending on wave number
+    // Enemies in each list set in unity
     private void ManageEnemyList()
     {
         switch (wave)
         {
             case 1:
-                enemyList = GetComponentInChildren<PossibleEnemies>().tutorialList;
+                enemyList = GetComponentInChildren<PossibleEnemies>().tutorialList; // Only easiest Z in list
                 break;
             case 2:
                 enemyList = GetComponentInChildren<PossibleEnemies>().veryEasyList;
@@ -347,6 +419,10 @@ public class GameMaster : MonoBehaviour
                 enemyList = GetComponentInChildren<PossibleEnemies>().extremeList;
                 break;
             case 10:
+                enemyList = GetComponentInChildren<PossibleEnemies>().insaneList; // Hardest Zs in list
+                break;
+            default:
+                // If max waves > 10
                 enemyList = GetComponentInChildren<PossibleEnemies>().insaneList;
                 break;
         }

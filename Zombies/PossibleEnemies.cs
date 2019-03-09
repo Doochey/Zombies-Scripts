@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class PossibleEnemies : MonoBehaviour
 {
+    // Store for lists of possible enemies set in unity editor
+    
+    
     public GameObject[] tutorialList;
     public GameObject[] veryEasyList;
     public GameObject[] easyList;

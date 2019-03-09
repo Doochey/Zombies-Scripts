@@ -5,19 +5,23 @@ using UnityEngine.SceneManagement;
 
 public class Pause : MonoBehaviour
 {
-    public GameObject pauseMenu;
+    public GameObject pauseMenu; //Menu to display when user pauses game
     public GameObject player;
     
-    private bool paused;
+    private bool paused; // If the game is currently paused
+    private StatLogging logger;
+    private GameMaster GM;
     
     
     void Start()
     {
-        
+        logger = GameObject.FindWithTag("StatLog").GetComponent<StatLogging>();
+        GM = GameObject.FindWithTag("GM").GetComponent<GameMaster>();
     }
 
     void Update()
     {
+        // Space to pause/unpause
         if (Input.GetKeyDown(KeyCode.Space) && !paused)
         {
             PauseGame();
@@ -27,72 +31,81 @@ public class Pause : MonoBehaviour
             UnpauseGame();
         }
         
+        // Escape to quit
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             Quit();
         }
 
+        // R to restart
         if (Input.GetKeyDown(KeyCode.R))
         {
             RestartGame();
         }
     }
 
+    // Pauses the game
     public void PauseGame()
     {
-        Time.timeScale = 0f;
-        paused = true;
-        
-        GameObject.FindWithTag("StatLog").GetComponent<StatLogging>().addTimesPaused();
-
-        if (!GameObject.FindWithTag("GM").GetComponent<GameMaster>().isGameOver())
+        if (!GM.isGameOver())
         {
+            // Stop time
+            Time.timeScale = 0f;
+            paused = true;
+        
+            // Log pause action
+            logger.addTimesPaused();
+
             player.GetComponent<PlayerMovement>().enabled = false;
             player.GetComponentInChildren<PlayerShoot>().enabled = false;
+            
+            pauseMenu.SetActive(true);
         }
-        
-        
-        pauseMenu.SetActive(true);
     }
     
+    // Unpauses the game
     public void UnpauseGame()
     {
-        if (!GameObject.FindWithTag("GM").GetComponent<GameMaster>().isGameOver())
+        if (!GM.isGameOver())
         {
             player.GetComponent<PlayerMovement>().enabled = true;
             player.GetComponentInChildren<PlayerShoot>().enabled = true;
+            
+            Time.timeScale = 1f;
+            paused = false;
+        
+            pauseMenu.SetActive(false);
         }
-        
-        
-        
-        Time.timeScale = 1f;
-        paused = false;
-        
-        pauseMenu.SetActive(false);
-
-        
     }
 
+    // Reloads the game
     public void RestartGame()
     {
-        GameObject.FindWithTag("StatLog").GetComponent<StatLogging>().addTimesRestarted();
+        // Log restart action
+        logger.addTimesRestarted();
+        
+        // Ensure time running
         Time.timeScale = 1f;
+        
+        // Load same scene
         SceneManager.LoadScene(0);
     }
 
     public void Quit()
     {
-      
-        GameObject.FindWithTag("StatLog").GetComponent<StatLogging>().StatDump();
+        // Print Log to output
+        logger.StatDump();
         Application.Quit();
         
     }
 
+    // Displays pause menu, for use when switching between zombpedia and pause menu
     public void ShowMenu()
     {
         pauseMenu.SetActive(true);
     }
 
+    // Hides pause menu, for use when switching between zombpedia and pause menu
     public void HideMenu()
     {
         pauseMenu.SetActive(false);
