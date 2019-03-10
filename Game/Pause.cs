@@ -87,6 +87,8 @@ public class Pause : MonoBehaviour
         // Ensure time running
         Time.timeScale = 1f;
         
+        GameObject.FindWithTag("Zevolution").GetComponent<Zevolution>().Restarted();
+        
         // Load same scene
         SceneManager.LoadScene(0);
     }

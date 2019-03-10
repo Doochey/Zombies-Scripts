@@ -6,8 +6,10 @@ using UnityEngine.UI;
 public class PlayerHealth : MonoBehaviour
 {
 
-    public float health; // Player starting health
+    public int health; // Player starting health
+    
     public bool dead; // If player is dead
+    
     public GameObject damageFader; // Red screen overlay, show when player takes damage
     public GameObject poisonFader; // Green screen overlay, Show when player takes poison damage
     
@@ -60,7 +62,7 @@ public class PlayerHealth : MonoBehaviour
     }
 
     // Reduced player health by damage, tells game master which enemy did damage
-    public void takeDamage(float damage, string tag)
+    public void takeDamage(int damage, string tag)
     {
         // record enemy that did damage
         GM.recordLastEnemyToAttack(tag);
@@ -100,7 +102,7 @@ public class PlayerHealth : MonoBehaviour
         healthNumber.text = "" + health; 
     }
 
-    public float getHealth()
+    public int getHealth()
     {
         return health;
     }
@@ -179,7 +181,7 @@ public class PlayerHealth : MonoBehaviour
     }
 
     // Increases player health by inc amount, used for health pack pickups
-    public void increaseHealth(float inc)
+    public void increaseHealth(int inc)
     {
         // If health not at max
         if (health < 125)

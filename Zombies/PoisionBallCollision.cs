@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class PoisionBallCollision : MonoBehaviour
 {
-    private float damage;
+    private int damage;
     
     private void OnTriggerEnter(Collider other)
     {
@@ -22,7 +22,7 @@ public class PoisionBallCollision : MonoBehaviour
         }
     }
     
-    public void setDamage(float dam)
+    public void setDamage(int dam)
     {
         damage = dam;
     }

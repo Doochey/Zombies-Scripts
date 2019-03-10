@@ -5,7 +5,7 @@ using UnityEngine;
 public class HealthPickup : MonoBehaviour
 {
 
-    public float HP = 5f;
+    public int HP = 5;
 
     private bool added;
     private void OnTriggerEnter(Collider other)

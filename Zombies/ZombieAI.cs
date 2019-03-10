@@ -9,11 +9,11 @@ public class ZombieAI : MonoBehaviour
     public float attackRange; // Maximum distance between Z and Player that Z can attack from
     public float speed; // Speed Z can move
     public float timeToDamage; // Minimum time Z must be in range before an attack is made
-    public float damage; // Damage Z can do to player
     public float DR; // Difficulty rating of Z
     public float noiseRate; // How often Z can make sound
     public float maxRange; // Max aggro range of Z
 
+    public int damage; // Damage Z can do to player
 
     // Insect only v
     public GameObject poisonBall; // Prefab of poison ball
@@ -38,11 +38,13 @@ public class ZombieAI : MonoBehaviour
     private bool inLOS = false; // If player is in line of sight (LOS)
     private bool attackAdded = false; // Has Z been added to total attacking pool
     private bool soundAdded = false; // Has Z been added to total sound pool
+    private bool aggroAdded = false;
     
 
     private static int soundsPlaying = 0; // Current number of sounds playing
     private static int maxSounds = 3; // Maximum number of sounds allowed to play
     private static int numberZAttacking = 0; // Current number of Z within attacking range of player
+    private static int numberZAggroed = 0; // Current number of Zs chasing player
     
     
     
@@ -113,6 +115,13 @@ public class ZombieAI : MonoBehaviour
 
                 // Reset time in range
                 timeInRange = 0f;
+                
+                if (aggroAdded)
+                {
+                    aggroAdded = false;
+                    numberZAggroed--;
+                    GM.GetComponent<GameMaster>().UpdateZAggroed(numberZAggroed);
+                }
 
                 
             } 
@@ -124,6 +133,14 @@ public class ZombieAI : MonoBehaviour
                     // Remove them from total attacking pool
                     attackAdded = false;
                     numberZAttacking--;
+                    GM.GetComponent<GameMaster>().UpdateZAttacking(numberZAttacking);
+                }
+
+                if (!aggroAdded)
+                {
+                    aggroAdded = true;
+                    numberZAggroed++;
+                    GM.GetComponent<GameMaster>().UpdateZAggroed(numberZAggroed);
                 }
                 
                 // Reptile only
@@ -179,8 +196,13 @@ public class ZombieAI : MonoBehaviour
                 transform.LookAt(player.transform);
                 
                 // Add Z to total attacking pool
-                attackAdded = true;
-                numberZAttacking++;
+                if (!attackAdded)
+                {
+                    attackAdded = true;
+                    numberZAttacking++;
+                    GM.GetComponent<GameMaster>().UpdateZAttacking(numberZAttacking);
+                }
+                
                 
                 // Increase Time Z is in attack range (Z should not do damage as soon as in range)
                 timeInRange += Time.deltaTime;
@@ -239,6 +261,7 @@ public class ZombieAI : MonoBehaviour
             anim.SetBool("idle", true);
             anim.SetBool("attacking", false);
             anim.SetBool("walking", false);
+
         }
         
         
@@ -264,6 +287,31 @@ public class ZombieAI : MonoBehaviour
 
     }
 
+    public int GetZAttacking()
+    {
+        return numberZAttacking;
+    }
+
+
+    public int GetZAggroed()
+    {
+        return numberZAggroed;
+    }
+
+    public void RemoveFromPools()
+    {
+        if (attackAdded)
+        {
+            numberZAttacking--;
+            GM.GetComponent<GameMaster>().UpdateZAttacking(numberZAttacking);
+        }
+
+        if (aggroAdded)
+        {
+            numberZAggroed--;
+            GM.GetComponent<GameMaster>().UpdateZAggroed(numberZAggroed);
+        }
+    }
       
     }
     

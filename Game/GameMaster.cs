@@ -15,9 +15,10 @@ public class GameMaster : MonoBehaviour
      * ends game when player dead or wave limit reached
      */
     
-    public float skill; // Skill of player
+    
     public float spawnRate = 2f; // Rate Zs spawn
     public float minSpawnDistance; // Minimum distance spawner must be from player to spawn Z
+    public float skill; // Skill of player
     
     public GameObject[] spawnPoints; // List of possible spawnpoints
     public GameObject[] enemyList; // List of possible enemy types
@@ -38,6 +39,7 @@ public class GameMaster : MonoBehaviour
     public int zLimitModifier; // Constant multiplied by wave to get max number of Zs
     public int waveDRConstant; // Constant offset for DR of wave. Higher == More difficult
     
+    
 
     
     
@@ -53,6 +55,11 @@ public class GameMaster : MonoBehaviour
     private int toSpawn = 0; // Number of Zs that should spawn
     private int zLimit = 60; // Max number of Zs
     private int currentDroppables = 0; // Current number of items in the world. 
+    private int stress = 0;
+    private int ZAttacking = 0;
+    private int currentWaveTrueDR = 0;
+    private int ZAggroed;
+    private int zAlive;
     
     private string lastEnemyToAttack; // Last enemy to do damage to player
     
@@ -157,6 +164,11 @@ public class GameMaster : MonoBehaviour
             winMenu.SetActive(true);
             winMenu.GetComponent<Animator>().SetTrigger("GameOver");
             
+            // Log game win
+            logger.addGamesWon();
+            
+            logger.StatDump();
+            
             // Reset cursor to default
             GetComponent<SetCursor>().ResetCursor();
             
@@ -227,6 +239,8 @@ public class GameMaster : MonoBehaviour
 
                 // Subtract Z trueDR from wave total
                 waveDR -= trueDR;
+
+                currentWaveTrueDR += (int) trueDR;
             }
             
             if (waveComp.Count == zLimit || cycles >= zLimit*2) // If max Zs reached or max Cycles
@@ -266,6 +280,7 @@ public class GameMaster : MonoBehaviour
             {
                 Instantiate(Z, spawnPoint.transform.position, spawnPoint.transform.rotation);
                 spawned++;
+                zAlive++;
             }
             else
             {
@@ -366,6 +381,9 @@ public class GameMaster : MonoBehaviour
     public void zDead()
     {
         zLeft-=1;
+
+        zAlive--;
+        
         
         // Log Z killed action
         logger.addZKilled();
@@ -431,5 +449,76 @@ public class GameMaster : MonoBehaviour
     public GameObject getPlayer()
     {
         return player;
+    }
+
+    public void SetStress(int s)
+    {
+        stress = s;
+    }
+
+    public int GetStress()
+    {
+        return stress;
+    }
+
+    public float GetSkill()
+    {
+        return skill;
+    }
+
+    public void SetSkill(float s)
+    {
+        skill = s;
+    }
+
+    public void UpdateZAttacking(int Z)
+    {
+        ZAttacking = Z;
+    }
+
+    public int GetZAttacking()
+    {
+        return ZAttacking;
+    }
+
+    public int GetSpawned()
+    {
+        return spawned;
+    }
+
+    public int GetCurrentWaveDR()
+    {
+        return currentWaveTrueDR;
+    }
+
+
+    public void UpdateZAggroed(int Z)
+    {
+        ZAggroed = Z;
+    }
+    
+    public int GetZAggroed()
+    {
+        return ZAggroed;
+    }
+
+    public int GetZAlive()
+    {
+        return zAlive;
+    }
+
+    public bool IsInWave()
+    {
+        return inWave;
+    }
+
+    public int GetWave()
+    {
+        return wave;
+    }
+
+    public bool GameWon()
+    {
+        return win;
     }
 }

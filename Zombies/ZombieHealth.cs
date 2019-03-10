@@ -43,7 +43,9 @@ public class ZombieHealth : MonoBehaviour
             if (!dying) // NOT dying as should only run first time health is registered <= 0
             {
                 // Register Z dead with Game Master
-                GM.zDead(); 
+                GM.zDead();
+
+                GetComponent<ZombieAI>().RemoveFromPools();
                 
                 // Chance of dropping item
                 GM.drop(gameObject);
