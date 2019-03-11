@@ -14,6 +14,7 @@ public class ZombieAI : MonoBehaviour
     public float maxRange; // Max aggro range of Z
 
     public int damage; // Damage Z can do to player
+    public int tier;
 
     // Insect only v
     public GameObject poisonBall; // Prefab of poison ball
@@ -59,6 +60,7 @@ public class ZombieAI : MonoBehaviour
         source = gameObject.GetComponent<AudioSource>();
         groans = GameObject.FindWithTag("Sounds").GetComponent<ZombieSounds>().groans;
         attackSounds = GameObject.FindWithTag("Sounds").GetComponent<ZombieSounds>().attackSounds;
+        GetComponent<ModifiedDR>().UpdateDR();
         
         // Random offset for noise rate, prevents all Z making noises at same rate
         noiseRate += Random.Range(1, 8f);

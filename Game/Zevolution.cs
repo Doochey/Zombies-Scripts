@@ -9,10 +9,15 @@ public class Zevolution : MonoBehaviour
     private float averageStress;
     private float currentWavePeakStress = 0f;
     private float averagePeakStress = 0f;
-    private float overalPeakStress = 0f;
+    private float overallPeakStress = 0f;
     private float skill;
 
+    private int maxStressCount = 0;
+
     private bool active;
+    private bool applyStress;
+    private bool cooldownStress;
+    private bool madeChanges;
 
     private GameMaster GM;
 
@@ -20,26 +25,34 @@ public class Zevolution : MonoBehaviour
 
     private StatLogging logger;
 
-    private static bool created = false;
-    
-    private bool stopped = false;
-    private bool restarted = false;
-    
+    private void Awake()
+    {
+        // Change to false to disable Zevolution, Tracking stress/skill still active
+        active = false;
+    }
+
+
     void Start()
     {
-        if (created)
-        {
-            Destroy(this.gameObject);
-        }
-        created = true;
         
-        // Comment out line below to disable Zevolution, Tracking still active
-        active = true;
+        
         
         GM = GameObject.FindWithTag("GM").GetComponent<GameMaster>();
         player = GameObject.FindWithTag("Player");
         logger = GameObject.FindWithTag("StatLog").GetComponent<StatLogging>();
-        skill = GM.GetSkill();
+        if (logger.GetRestarts() > 0)
+        {
+            skill = logger.GetSkill();
+            GM.SetSkill(skill);
+        }
+        else
+        {
+            skill = GM.GetSkill(); 
+            SaveSkill();
+        }
+
+        applyStress = true;
+        
 
         StartCoroutine(AverageStress());
 
@@ -47,32 +60,69 @@ public class Zevolution : MonoBehaviour
 
     void LateUpdate()
     {
-        if (restarted)
-        {
-            
-            GM = GameObject.FindWithTag("GM").GetComponent<GameMaster>();
-            player = GameObject.FindWithTag("Player");
-            GM.SetSkill(skill);
-            restarted = false;
-            StartCoroutine(AverageStress());
-        }
+        GM.SetSkill(skill);
         
         UpdateStress();
 
-        if (active)
+        if (!GM.IsInWave() && applyStress && active)
         {
-            if (GM.GetWave() != 1 && !GM.IsInWave() && !GM.isGameOver())
-            {
-                UpdateSkillWaveComplete();
-            } else if (GM.isGameOver() && !GM.GameWon())
-            {
-                UpdateSkillWaveFailed();
-            } else if (GM.isGameOver() && GM.GameWon())
-            {
-                UpdateSkillGameComplete();
-            }
+            IncreaseWaveDR();
+            
+        } else if (!GM.IsInWave() && cooldownStress && active)
+        {
+            CooldownWaveDR();
         }
         
+        if (GM.GetWave() != 1 && !GM.IsInWave() && !GM.isGameOver())
+        {
+            Debug.Log("WAVE COMPLETE");
+            UpdateSkillWaveComplete();
+        } else if (GM.isGameOver() && !GM.GameWon() && !madeChanges)
+        {
+            Debug.Log("WAVE FAILED");
+            UpdateSkillWaveFailed();
+            madeChanges = true;
+        } else if (GM.isGameOver() && GM.GameWon() && !madeChanges)
+        {
+            Debug.Log("GAME COMPLETE");
+            UpdateSkillGameComplete();
+            madeChanges = true;
+        }
+
+        
+    }
+
+    private void IncreaseWaveDR()
+    {
+        if (GM.GetWave() == 1)
+        {
+            GM.waveDRConstant = 5;
+        }
+        else
+        {
+            GM.waveDRConstant += 5;
+        }
+        
+    }
+
+    private void CooldownWaveDR()
+    {
+        GM.waveDRConstant -= 5;
+    }
+    
+    private void BigCooldownWaveDR()
+    {
+        GM.waveDRConstant -= 15;
+        if (player.GetComponent<PlayerHealth>().getHealth() < 50)
+        {
+            GM.SpawnHealth();
+        }
+        
+    }
+
+    private void SaveSkill()
+    {
+        logger.SaveSkill(skill);
     }
 
     private void UpdateStress()
@@ -101,11 +151,28 @@ public class Zevolution : MonoBehaviour
 
                 CheckPeakStress();
             
-                Debug.Log("Stress: " + stress);
-                Debug.Log("Skill: " + skill);
             }
             else
             {
+                if (maxStressCount > 0)
+                {
+                    BigCooldownWaveDR();
+                }
+                else if (averageStress > 100 && maxStressCount == 0)
+                {
+                    
+                    cooldownStress = true;
+                    applyStress = false;
+                    maxStressCount++;
+                    
+                    Debug.Log("COOLDOWN");
+                } else if (averageStress < 100 && !applyStress)
+                {
+                    applyStress = true;
+                    cooldownStress = false;
+                    
+                    Debug.Log("APPLY STRESS");
+                }
                 AveragePeakStress();
             }
             
@@ -120,10 +187,10 @@ public class Zevolution : MonoBehaviour
             currentWavePeakStress = stress;
         }
 
-        if (currentWavePeakStress > overalPeakStress)
+        if (currentWavePeakStress > overallPeakStress)
         {
-            overalPeakStress = currentWavePeakStress;
-            logger.SetOverallPeakStress(overalPeakStress);
+            overallPeakStress = currentWavePeakStress;
+            logger.SetOverallPeakStress(overallPeakStress);
             logger.SetWaveStressPeaked(GM.GetWave());
         }
     }
@@ -172,7 +239,12 @@ public class Zevolution : MonoBehaviour
         {
             skill = 1;
         }
-        GM.SetSkill(skill);
+
+        if (active)
+        {
+            GM.SetSkill(skill);
+        }
+        SaveSkill();
         
     }
 
@@ -192,17 +264,33 @@ public class Zevolution : MonoBehaviour
         {
             skill = 1;
         }
-        GM.SetSkill(skill);
+        if (active)
+        {
+            GM.SetSkill(skill);
+        }
+        SaveSkill();
+
+
+        if (active)
+        {
+            GetComponent<ModifiedDR>().AddDR(GM.GetLastEnemy(), 5f);
+        }
+        
     }
     
     private void UpdateSkillGameComplete()
     {
         skill++;
-        GM.SetSkill(skill);
+        if (active)
+        {
+            GM.SetSkill(skill);
+        }
+        SaveSkill();
     }
 
-    public void Restarted()
+    public bool IsActive()
     {
-        restarted = true;
+        return active;
     }
+
 }

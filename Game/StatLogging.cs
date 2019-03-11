@@ -27,6 +27,7 @@ public class StatLogging : MonoBehaviour
     private int timesPoisoned = 0; // Number of times player was poisoned
     private int gamesWon = 0; // Number of games the player has won
     private int waveStressPeaked = 1;
+    private float skill = 0;
 
     private static bool created = false;
     private bool dumped = false; // If stats have been printed to output
@@ -40,6 +41,21 @@ public class StatLogging : MonoBehaviour
         }
 
         created = true;
+    }
+
+    public void SaveSkill(float s)
+    {
+        skill = s;
+    }
+
+    public float GetSkill()
+    {
+        return skill;
+    }
+
+    public int GetRestarts()
+    {
+        return timesRestarted;
     }
 
     private float getTimePlayed()

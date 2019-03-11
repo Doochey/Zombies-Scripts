@@ -49,6 +49,9 @@ public class GameMaster : MonoBehaviour
     private bool gameOver = false; // If game is over or not
     private bool inWave = false; // If in wave or not
     private bool win = false; // If game has been won
+    private bool newZIntroduced = false;
+    private int tier1Introduced = 0;
+    private int tier2Introduced = 0;
     
     private int wave = 0; // Current wave number
     private int spawned = 0; // Zs successfully spawned, for Debugging
@@ -67,6 +70,8 @@ public class GameMaster : MonoBehaviour
     private Text zombieNumber; // Text showing Zs left alive
     
     private StatLogging logger; // Stat Logger
+
+    private ArrayList enemiesIntroduced;
     
     
     
@@ -80,6 +85,7 @@ public class GameMaster : MonoBehaviour
         waveNumber = GameObject.FindWithTag("wave").GetComponent<Text>();
         zombieNumber = GameObject.FindWithTag("zleft").GetComponent<Text>();
         logger = GameObject.FindWithTag("StatLog").GetComponent<StatLogging>();
+        enemiesIntroduced = new ArrayList();
     }
 
     void FixedUpdate()
@@ -87,7 +93,7 @@ public class GameMaster : MonoBehaviour
         zombieNumber.text = "Zs LEFT: " + zLeft;
         
         // If game is not over and wave not in progress
-        if (!gameOver && !inWave && wave < 10)
+        if (!gameOver && !inWave && wave < maxWaves)
         {
             // Inc Wave number
             wave++;
@@ -98,10 +104,9 @@ public class GameMaster : MonoBehaviour
             waveNumber.text = "WAVE: " + wave;
             
             // Calculate waveDR
-            waveDR = waveDRConstant * wave + skill;
+            waveDR = waveDRConstant * wave + 5 * skill;
             
             // Log current wave difficulty
-            Debug.Log("Wave Difficulty: " + waveDR);
             
             // Build composition of wave
             loadWaveComposition();
@@ -140,8 +145,6 @@ public class GameMaster : MonoBehaviour
             // Spawn Health
             SpawnHealth();
             
-            // Set next wave DR
-            waveDR = 50 * wave;
 
             // If final wave
             if (wave + 1 > maxWaves)
@@ -219,44 +222,122 @@ public class GameMaster : MonoBehaviour
     void loadWaveComposition()
     {
         // Calculate max Zs to spawn
-        zLimit = zLimitModifier * wave;
+        if (zLimit < 200)
+        {
+            zLimit = zLimitModifier * wave;
+        }
+        else
+        {
+            zLimit = 200;
+        }
+        
         bool waveCompDone = false;
         int cycles = 0; // Possible that waveDR left is not enough for any Z to be added to wave so limit looping
+        float trueWaveDR = 0f;
+        newZIntroduced = false;
         while (!waveCompDone)
         {
             
             // Select random enemy from all possible
             int enemyIndex = Random.Range(0, enemyList.Length);
-            
-            // Calculate 'true' difficulty rating, DR of Z / Player skill
-            float trueDR = enemyList[enemyIndex].GetComponent<ZombieAI>().DR / skill;
-            
-            if (trueDR < waveDR && waveComp.Count < zLimit) // If trueDR is below wave max and wave not at max Zs
-            {
-                // Add Z to wave
-                waveComp.Push(enemyList[enemyIndex]);
-                logger.addWaveDR(trueDR);
 
-                // Subtract Z trueDR from wave total
-                waveDR -= trueDR;
+            GameObject Z = enemyList[enemyIndex];
+            
+            
+            
 
-                currentWaveTrueDR += (int) trueDR;
+            if(OkToAdd(Z))
+            {
+                // Calculate 'true' difficulty rating, DR of Z / Player skill
+
+                float trueDR;
+                if (GameObject.FindWithTag("Zevolution").GetComponent<Zevolution>().IsActive())
+                {
+                    trueDR = Z.GetComponent<ModifiedDR>().GetDR(Z.tag) / skill;
+                }
+                else
+                {
+                    trueDR = Z.GetComponent<ZombieAI>().DR / skill;
+                }
+                
+            
+                if (trueDR < waveDR && waveComp.Count < zLimit) // If trueDR is below wave max and wave not at max Zs
+                {
+                    // Add Z to wave
+                    waveComp.Push(Z);
+                
+                    trueWaveDR += trueDR;
+
+                    // Subtract Z trueDR from wave total
+                    waveDR -= trueDR;
+
+                    currentWaveTrueDR += (int) trueDR;
+                }
+            
+                if (waveComp.Count == zLimit || cycles >= zLimit*2) // If max Zs reached or max Cycles
+                {
+                    waveCompDone = true;
+                }
+                else
+                {
+                    cycles++;
+                }
             }
             
-            if (waveComp.Count == zLimit || cycles >= zLimit*2) // If max Zs reached or max Cycles
-            {
-                waveCompDone = true;
-                Debug.Log("Wave Comp Loaded");
-                Debug.Log("WaveComp Count: " + waveComp.Count);
-            }
-            else
-            {
-                cycles++;
-            }
+            
         }
+        logger.addWaveDR(trueWaveDR);
 
         // Update number of Zs alive
         zLeft = waveComp.Count;
+    }
+
+    private bool OkToAdd(GameObject Z)
+    {
+        bool okToAdd = false;
+        if (GameObject.FindWithTag("Zevolution").GetComponent<Zevolution>().IsActive())
+        {
+            if (enemiesIntroduced.Contains(Z.gameObject.tag))
+            {
+                okToAdd = true;
+            }
+            else if (!newZIntroduced)
+            {
+                int tier = Z.GetComponent<ZombieAI>().tier;
+                switch (tier)
+                {
+                    case 1:
+                        tier1Introduced++;
+                        okToAdd = true;
+                        break;
+                    case 2:
+                        if (tier1Introduced == 3)
+                        {
+                            tier2Introduced++;
+                            okToAdd = true;
+                        }
+                        break;
+                    case 3:
+                        if (tier1Introduced == 3 && tier2Introduced == 2)
+                        {
+                            okToAdd = true;
+                        }
+                        break;
+                }
+
+                if (okToAdd)
+                {
+                    enemiesIntroduced.Add(Z.gameObject.tag);
+                    newZIntroduced = true;
+                }
+                
+            }
+        }
+        else
+        {
+            okToAdd = true;
+        }
+        return okToAdd;
     }
 
     // Spawns a Z from wave to random spawnpoint
@@ -353,26 +434,30 @@ public class GameMaster : MonoBehaviour
 
     // Spawns health at health spawner. Size of health pack depends on wave number
     // Only spawns health on odd waves, (currently) so player gets health before wave 10 (final wave)
-    private void SpawnHealth()
+    public void SpawnHealth()
     {
         // If world droppables not at max capacity && odd wave
         if (currentDroppables < maxDroppables && wave % 2 > 0)
         {
-            if (wave < 4)
+            if (!healthSpawner.GetComponent<SpawnerOccupied>().occupied)
             {
-                Instantiate(smallHealth, healthSpawner.transform.position, healthSpawner.transform.rotation);
+                if (wave < 4)
+                {
+                    Instantiate(smallHealth, healthSpawner.transform.position, healthSpawner.transform.rotation);
             
-            }
-            else if (wave < 8)
-            {
-                Instantiate(mediumHealth, healthSpawner.transform.position, healthSpawner.transform.rotation);
-            }
-            else
-            {
-                Instantiate(largeHealth, healthSpawner.transform.position, healthSpawner.transform.rotation);
+                }
+                else if (wave < 8)
+                {
+                    Instantiate(mediumHealth, healthSpawner.transform.position, healthSpawner.transform.rotation);
+                }
+                else
+                {
+                    Instantiate(largeHealth, healthSpawner.transform.position, healthSpawner.transform.rotation);
+                }
+            
+                currentDroppables++;
             }
             
-            currentDroppables++;
         }
         
     }
@@ -411,39 +496,47 @@ public class GameMaster : MonoBehaviour
     // Enemies in each list set in unity
     private void ManageEnemyList()
     {
-        switch (wave)
+        if (GameObject.FindWithTag("Zevolution").GetComponent<Zevolution>().IsActive() && wave > 1)
         {
-            case 1:
-                enemyList = GetComponentInChildren<PossibleEnemies>().tutorialList; // Only easiest Z in list
-                break;
-            case 2:
-                enemyList = GetComponentInChildren<PossibleEnemies>().veryEasyList;
-                break;
-            case 3:
-            case 4:
-                enemyList = GetComponentInChildren<PossibleEnemies>().easyList;
-                break;    
-            case 5:
-            case 6:
-                enemyList = GetComponentInChildren<PossibleEnemies>().mediumList;
-                break;
-            case 7:
-                enemyList = GetComponentInChildren<PossibleEnemies>().hardList;
-                break;
-            case 8:
-                enemyList = GetComponentInChildren<PossibleEnemies>().veryHardList;
-                break;
-            case 9:
-                enemyList = GetComponentInChildren<PossibleEnemies>().extremeList;
-                break;
-            case 10:
-                enemyList = GetComponentInChildren<PossibleEnemies>().insaneList; // Hardest Zs in list
-                break;
-            default:
-                // If max waves > 10
-                enemyList = GetComponentInChildren<PossibleEnemies>().insaneList;
-                break;
+            enemyList = GetComponentInChildren<PossibleEnemies>().zevolutionList;
         }
+        else
+        {
+            switch (wave)
+            {
+                case 1:
+                    enemyList = GetComponentInChildren<PossibleEnemies>().tutorialList; // Only easiest Z in list
+                    break;
+                case 2:
+                    enemyList = GetComponentInChildren<PossibleEnemies>().veryEasyList;
+                    break;
+                case 3:
+                case 4:
+                    enemyList = GetComponentInChildren<PossibleEnemies>().easyList;
+                    break;    
+                case 5:
+                case 6:
+                    enemyList = GetComponentInChildren<PossibleEnemies>().mediumList;
+                    break;
+                case 7:
+                    enemyList = GetComponentInChildren<PossibleEnemies>().hardList;
+                    break;
+                case 8:
+                    enemyList = GetComponentInChildren<PossibleEnemies>().veryHardList;
+                    break;
+                case 9:
+                    enemyList = GetComponentInChildren<PossibleEnemies>().extremeList;
+                    break;
+                case 10:
+                    enemyList = GetComponentInChildren<PossibleEnemies>().insaneList; // Hardest Zs in list
+                    break;
+                default:
+                    // If max waves > 10
+                    enemyList = GetComponentInChildren<PossibleEnemies>().insaneList;
+                    break;
+            }  
+        }
+        
     }
 
     public GameObject getPlayer()
@@ -520,5 +613,10 @@ public class GameMaster : MonoBehaviour
     public bool GameWon()
     {
         return win;
+    }
+
+    public string GetLastEnemy()
+    {
+        return lastEnemyToAttack;
     }
 }
