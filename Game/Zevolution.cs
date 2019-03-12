@@ -5,6 +5,8 @@ using UnityEngine;
 public class Zevolution : MonoBehaviour
 {
 
+    public GameObject player;
+
     private float stress;
     private float averageStress;
     private float currentWavePeakStress = 0f;
@@ -21,7 +23,6 @@ public class Zevolution : MonoBehaviour
 
     private GameMaster GM;
 
-    private GameObject player;
 
     private StatLogging logger;
 
@@ -38,7 +39,6 @@ public class Zevolution : MonoBehaviour
         
         
         GM = GameObject.FindWithTag("GM").GetComponent<GameMaster>();
-        player = GameObject.FindWithTag("Player");
         logger = GameObject.FindWithTag("StatLog").GetComponent<StatLogging>();
         if (logger.GetRestarts() > 0)
         {

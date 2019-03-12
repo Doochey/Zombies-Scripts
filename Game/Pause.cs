@@ -87,6 +87,7 @@ public class Pause : MonoBehaviour
         // Ensure time running
         Time.timeScale = 1f;
         
+        logger.resetDumped();
         logger.StatDump();
         
         // Load same scene
@@ -96,6 +97,7 @@ public class Pause : MonoBehaviour
     public void Quit()
     {
         // Print Log to output
+        logger.resetDumped();
         logger.StatDump();
         Application.Quit();
         

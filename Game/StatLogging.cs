@@ -39,6 +39,10 @@ public class StatLogging : MonoBehaviour
         {
             Destroy(this.gameObject);
         }
+        else
+        {
+            ClearFile();
+        }
 
         created = true;
     }
@@ -161,10 +165,52 @@ public class StatLogging : MonoBehaviour
             Debug.Log("Times Poisoned: " + timesPoisoned);
             Debug.Log("Average Wave DR: " + averageWaveDR);
             Debug.Log("Games Won: " + gamesWon);
+
+            
+            System.IO.StreamWriter file =
+                new System.IO.StreamWriter(@"C:\Users\Public\Unity Stat Dumps\stat_dump.txt", true);
+            file.WriteLine("Start Dump --------------------- ");
+            file.WriteLine("Zevolution Status: " + GameObject.FindWithTag("Zevolution").GetComponent<Zevolution>().IsActive());
+            file.WriteLine("Time Played: " + getTimePlayed());
+            file.WriteLine("Wave Reached: " + waveReached);
+            file.WriteLine("Average Wave DR: " + averageWaveDR);
+            file.WriteLine("Killed player:  " + killedPlayer);
+            file.WriteLine("Health Lost: " + healthLost);
+            file.WriteLine("Health Packs Picked Up: " + healthPacksPickedUp);
+            file.WriteLine("Times hit: " + timesHit);
+            file.WriteLine("Average Stress: " + averageStress);
+            file.WriteLine("Overall Peak Stress: " + overallPeakStress);
+            file.WriteLine("Average Peak Stress: " + averageWavePeakStress);
+            file.WriteLine("Wave Stress Peaked: " + waveStressPeaked);
+            file.WriteLine("Skill: " + skill);
+            file.WriteLine("Zombies Killed: " + zKilled);
+            file.WriteLine("Times Paused: " + timesPaused);
+            file.WriteLine("Times Restarted: " + timesRestarted);
+            file.WriteLine("Mouse Clicks: " + mouseClicks);
+            file.WriteLine("Anti Venom Picked up: " + AVPickedUp);
+            file.WriteLine("Times Poisoned: " + timesPoisoned);
+            file.WriteLine("Games Won: " + gamesWon);
+            
+            
+            file.WriteLine("End Dump --------------------- ");
+            file.Close();
+            
             dumped = true;
         }
         
         
+    }
+
+    public void resetDumped()
+    {
+        dumped = false;
+    }
+
+    private void ClearFile()
+    {
+        System.IO.StreamWriter file =
+            new System.IO.StreamWriter(@"C:\Users\Public\Unity Stat Dumps\stat_dump.txt");
+        file.Close();
     }
 
     public void resetStats()
