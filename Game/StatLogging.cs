@@ -215,6 +215,19 @@ public class StatLogging : MonoBehaviour
 
     public void resetStats()
     {
-        
+        waveReached = 0;
+        averageWaveDR = 0;
+        killedPlayer = "";
+        healthLost = 0;
+        healthPacksPickedUp = 0;
+        timesHit = 0;
+        averageStress = 0;
+        overallPeakStress = 0;
+        averageWavePeakStress = 0;
+        waveStressPeaked = 0;
+        zKilled = 0;
+        AVPickedUp = 0;
+        timesPoisoned = 0;
+
     }
 }

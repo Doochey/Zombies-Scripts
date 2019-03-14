@@ -14,12 +14,13 @@ public class Zevolution : MonoBehaviour
     private float overallPeakStress = 0f;
     private float skill;
 
-    private int maxStressCount = 0;
+    private int maxStressCount = 2;
 
     private bool active;
     private bool applyStress;
     private bool cooldownStress;
     private bool madeChanges;
+    private bool checkedMaxStress;
 
     private GameMaster GM;
 
@@ -29,7 +30,7 @@ public class Zevolution : MonoBehaviour
     private void Awake()
     {
         // Change to false to disable Zevolution, Tracking stress/skill still active
-        active = false;
+        active = true;
     }
 
 
@@ -68,24 +69,24 @@ public class Zevolution : MonoBehaviour
         {
             IncreaseWaveDR();
             
-        } else if (!GM.IsInWave() && cooldownStress && active)
-        {
-            CooldownWaveDR();
         }
         
         if (GM.GetWave() != 1 && !GM.IsInWave() && !GM.isGameOver())
         {
             Debug.Log("WAVE COMPLETE");
             UpdateSkillWaveComplete();
+            Debug.Log("New Skill: " + skill);
         } else if (GM.isGameOver() && !GM.GameWon() && !madeChanges)
         {
             Debug.Log("WAVE FAILED");
             UpdateSkillWaveFailed();
+            Debug.Log("New Skill: " + skill);
             madeChanges = true;
         } else if (GM.isGameOver() && GM.GameWon() && !madeChanges)
         {
             Debug.Log("GAME COMPLETE");
             UpdateSkillGameComplete();
+            Debug.Log("New Skill: " + skill);
             madeChanges = true;
         }
 
@@ -131,6 +132,7 @@ public class Zevolution : MonoBehaviour
         {
             if (GM.IsInWave())
             {
+                checkedMaxStress = false;
                 int playerHealth = player.GetComponent<PlayerHealth>().getHealth();
                 int healthLost;
                 if (playerHealth > 100)
@@ -154,30 +156,40 @@ public class Zevolution : MonoBehaviour
             }
             else
             {
-                if (maxStressCount > 0)
-                {
-                    BigCooldownWaveDR();
-                }
-                else if (averageStress > 100 && maxStressCount == 0)
-                {
-                    
-                    cooldownStress = true;
-                    applyStress = false;
-                    maxStressCount++;
-                    
-                    Debug.Log("COOLDOWN");
-                } else if (averageStress < 100 && !applyStress)
-                {
-                    applyStress = true;
-                    cooldownStress = false;
-                    
-                    Debug.Log("APPLY STRESS");
-                }
+                CheckMaxStress();
                 AveragePeakStress();
             }
             
         }
         
+    }
+
+    private void CheckMaxStress()
+    {
+        if (!checkedMaxStress)
+        {
+            if (maxStressCount > 0)
+            {
+                BigCooldownWaveDR();
+            }
+            else if (averageStress > 100 && maxStressCount == 0)
+            {
+                    
+                cooldownStress = true;
+                applyStress = false;
+                maxStressCount++;
+                CooldownWaveDR();
+                    
+            } else if (averageStress < 100 && !applyStress)
+            {
+                maxStressCount = 0;
+                applyStress = true;
+                cooldownStress = false;
+                    
+            }
+
+            checkedMaxStress = true;
+        }
     }
 
     private void CheckPeakStress()

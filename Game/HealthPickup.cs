@@ -20,8 +20,6 @@ public class HealthPickup : MonoBehaviour
                 other.gameObject.GetComponent<PlayerHealth>().increaseHealth(HP);
                 added = true;
                 
-                // Subtract droppable from world counter
-                GameObject.FindWithTag("GM").GetComponent<GameMaster>().subtractDroppable();
                 
                 // Log health pack picked up
                 GameObject.FindWithTag("StatLog").GetComponent<StatLogging>().addHealthPacksPickedUp();
@@ -32,5 +30,11 @@ public class HealthPickup : MonoBehaviour
             
             
         }
+    }
+
+    private void OnDestroy()
+    {
+        // Subtract droppable from world counter
+        GameObject.FindWithTag("GM").GetComponent<GameMaster>().subtractDroppable();
     }
 }

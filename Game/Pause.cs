@@ -86,9 +86,14 @@ public class Pause : MonoBehaviour
         
         // Ensure time running
         Time.timeScale = 1f;
-        
+
+        if (!GM.isGameOver())
+        {
+            logger.resetDumped();
+            logger.StatDump();
+        }
         logger.resetDumped();
-        logger.StatDump();
+        logger.resetStats();
         
         // Load same scene
         SceneManager.LoadScene(0);

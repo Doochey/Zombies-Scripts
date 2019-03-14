@@ -104,6 +104,10 @@ public class GameMaster : MonoBehaviour
             waveNumber.text = "WAVE: " + wave;
             
             // Calculate waveDR
+            if (waveDRConstant < 0)
+            {
+                waveDRConstant = 1;
+            }
             waveDR = waveDRConstant * wave + 5 * skill;
             
             // Log current wave difficulty
@@ -280,11 +284,16 @@ public class GameMaster : MonoBehaviour
                 }
                 else
                 {
+                    
                     cycles++;
                 }
             }
             
             
+        }
+
+        if (cycles >= zLimit * 2)
+        {
         }
         logger.addWaveDR(trueWaveDR);
 
