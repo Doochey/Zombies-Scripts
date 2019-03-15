@@ -13,9 +13,6 @@ public class AntivenomPickup : MonoBehaviour
                 // Stop the player from taking poison damage
                 other.gameObject.GetComponent<PlayerHealth>().stopPoison();
                 
-                // Subtract droppable from world droppables counter
-                GameObject.FindWithTag("GM").GetComponent<GameMaster>().subtractDroppable();
-                
                 // Log AV pickup action
                 GameObject.FindWithTag("StatLog").GetComponent<StatLogging>().addAV();
                 
@@ -24,5 +21,11 @@ public class AntivenomPickup : MonoBehaviour
             }
            
         }
+    }
+
+    private void OnDestroy()
+    {
+        // Subtract droppable from world droppables counter
+        GameObject.FindWithTag("GM").GetComponent<GameMaster>().subtractDroppable();
     }
 }

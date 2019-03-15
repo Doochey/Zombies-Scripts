@@ -44,7 +44,11 @@ public class Zevolution : MonoBehaviour
         if (logger.GetRestarts() > 0)
         {
             skill = logger.GetSkill();
-            GM.SetSkill(skill);
+            if (active)
+            {
+                GM.SetSkill(skill); 
+            }
+            
         }
         else
         {
@@ -61,7 +65,11 @@ public class Zevolution : MonoBehaviour
 
     void LateUpdate()
     {
-        GM.SetSkill(skill);
+        if (active)
+        {
+            GM.SetSkill(skill);
+        }
+        
         
         UpdateStress();
 
@@ -166,7 +174,7 @@ public class Zevolution : MonoBehaviour
 
     private void CheckMaxStress()
     {
-        if (!checkedMaxStress)
+        if (!checkedMaxStress && active)
         {
             if (maxStressCount > 0)
             {
