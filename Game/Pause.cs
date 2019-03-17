@@ -101,9 +101,6 @@ public class Pause : MonoBehaviour
 
     public void Quit()
     {
-        // Print Log to output
-        logger.resetDumped();
-        logger.StatDump();
         Application.Quit();
         
     }

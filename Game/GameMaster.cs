@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
@@ -60,7 +59,7 @@ public class GameMaster : MonoBehaviour
     private int currentDroppables = 0; // Current number of items in the world. 
     private int stress = 0;
     private int ZAttacking = 0;
-    private int currentWaveTrueDR = 0;
+    private float currentWaveTrueDR = 0;
     private int ZAggroed;
     private int zAlive;
     
@@ -108,9 +107,9 @@ public class GameMaster : MonoBehaviour
             {
                 waveDRConstant = 1;
             }
+
             waveDR = waveDRConstant * wave + 5 * skill;
             
-            // Log current wave difficulty
             
             // Build composition of wave
             loadWaveComposition();
@@ -275,7 +274,7 @@ public class GameMaster : MonoBehaviour
                     // Subtract Z trueDR from wave total
                     waveDR -= trueDR;
 
-                    currentWaveTrueDR += (int) trueDR;
+                    currentWaveTrueDR += trueDR;
                 }
             
                 if (waveComp.Count == zLimit || cycles >= zLimit*2) // If max Zs reached or max Cycles
@@ -588,7 +587,7 @@ public class GameMaster : MonoBehaviour
         return spawned;
     }
 
-    public int GetCurrentWaveDR()
+    public float GetCurrentWaveDR()
     {
         return currentWaveTrueDR;
     }

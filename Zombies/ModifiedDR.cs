@@ -90,6 +90,7 @@ public class ModifiedDR : MonoBehaviour
                 case "Mutant":
                     MutantDR += amount;
                     break;
+                case "Poisoned":
                 case "poison":
                     insectDR += amount;
                     break;

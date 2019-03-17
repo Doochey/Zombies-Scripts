@@ -264,6 +264,18 @@ public class ZombieAI : MonoBehaviour
             anim.SetBool("attacking", false);
             anim.SetBool("walking", false);
 
+            if (attackAdded)
+            {
+                numberZAttacking--;
+                attackAdded = false;
+            }
+
+            if (aggroAdded)
+            {
+                numberZAggroed--;
+                aggroAdded = false;
+            }
+
         }
         
         
@@ -314,8 +326,10 @@ public class ZombieAI : MonoBehaviour
             GM.GetComponent<GameMaster>().UpdateZAggroed(numberZAggroed);
         }
     }
-      
-    }
+
+
+  
+}
     
 
 
